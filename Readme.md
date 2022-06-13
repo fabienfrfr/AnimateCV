@@ -2,9 +2,18 @@
 
 The objective is  # not now
 
+
+
 ```
 some pip
+
+# splited instruction
+zip -r -s 20m splited_model/resnet_attention-embed_lstm.zip resnet101_attention-embed_lstm_best-train.pt
+
 ```
+
+Animer aussi le Resnet ! (ne prendre que les 10 meilleurs carte de caracteristique par couche)
+
 
 Animate attention Algorithm : https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Image-Captioning or https://github.com/Subangkar/Image-Captioning-Attention-PyTorch
 
