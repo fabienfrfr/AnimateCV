@@ -41,22 +41,22 @@ def caption_model(MODEL_DIR,MODEL_NAME):
 	print('[INFO] Torch model ready to use !')
 	return model, word2idx, idx2word
 
-def process_caption(image, model, word2idx, idx2word):
-	print('[INFO] Prepare image for neural network model..')
-	im = torch.tensor(np.rollaxis(image, -1,0)/255., dtype=torch.float32)
+def process_caption(im, model, word2idx, idx2word):
 	print('[INFO] Define checkpoint of intermediate result layer..')
-	fhooks, inter_out, name = [], [], []
+	fhooks, encoder, name = [], [], []
 	for i,l in enumerate(list(model.encoder.resnet._modules.keys())):
 		name += [copy.deepcopy(l)]
-		fhooks.append(getattr(model.encoder.resnet,l).register_forward_hook(lambda m, input, output: inter_out.append((output))))
+		fhooks.append(getattr(model.encoder.resnet,l).register_forward_hook(lambda m, input, output: encoder.append((output))))
 	print('[INFO] Processing neural network model..')
-	encod_out, (capidx, alpha) = model.sample(im.unsqueeze(0), word2idx['<start>'], return_alpha=True)
+	capidx, alpha = model.sample(im.unsqueeze(0), word2idx['<start>'], return_alpha=True)
 	capidx, alpha = capidx[0].detach().cpu().numpy(), alpha[0].detach().cpu()
 	caption_pred =''.join(list(itertools.takewhile(lambda word: word.strip() != '<end>', map(lambda idx: idx2word[idx]+' ', iter(capidx)))))
+	text_list = caption_pred.split(' ')[:-1]
 	print('[INFO] Saving checkpoint..')
-	inter_out = [(n,out) for (n,out) in zip(name,inter_out)]
+	encoder = [(n,out) for (n,out) in zip(name,encoder)]
+	decoder = [(text_list[i], alpha[i][None]) for i in range(len(text_list))]
 	print('[INFO] Processing done !')
-	return encod_out, inter_out, capidx, alpha, caption_pred
+	return encoder, decoder, caption_pred
 
 if __name__ == '__main__':
 	## import model

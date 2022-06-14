@@ -294,6 +294,4 @@ class Captioner(nn.Module):
 
     def sample(self, images, startseq_idx, endseq_idx=-1, max_len=40, return_alpha=False):
         encoder_out = self.encoder(images)
-        decoder_out = self.decoder.sample(encoder_out=encoder_out, startseq_idx=startseq_idx, max_len=max_len, return_alpha=return_alpha)
-        # adding 
-        return encoder_out, decoder_out
+        return self.decoder.sample(encoder_out=encoder_out, startseq_idx=startseq_idx, max_len=max_len, return_alpha=return_alpha)

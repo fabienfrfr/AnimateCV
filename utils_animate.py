@@ -1,84 +1,98 @@
-# fabienfrfr - 20220613
+# fabienfrfr 20220614
+import os, cv2
+import skimage as skim
+import numpy as np, pylab as plt
+import matplotlib.animation as animation
 
-import cv2
+from utils_math import GRID_GEN
+"""
+Image imported by opencv, the format is RGB, but the model trained with BGR format 
+and matplotlib show BGRA type of image encoding.
+"""
 
-def plot(inter_out):
-	#image = cv2.imread(image_path)
-	#image = cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
-	# Window name in which image is displayed
-	window_name = 'Image'
-	  
-	# text
-	text = 'GeeksforGeeks'
-	  
-	# font
-	font = cv2.FONT_HERSHEY_SIMPLEX
-	  
-	# org
-	org = (00, 185)
-	  
-	# fontScale
-	fontScale = 1
-	   
-	# Red color in BGR
-	color = (0, 0, 255)
-	  
-	# Line thickness of 2 px
-	thickness = 2
+def show_all_channel(inter_out, DIM=(720,720)):
+	# Loop for each layers (width, height)
+	for name,array in inter_out :
+		shape = array.numpy()[0].shape
+		grid = GRID_GEN(shape[0])[1]
+		print('[INFO] Layer : '+str(name)+'; Shape : '+str((shape,grid)))
+		img_complete = array.numpy().reshape((shape[1]*grid[0], shape[2]*grid[1]))
+		img_complete = cv2.resize(img_complete, DIM, interpolation = cv2.INTER_AREA)
+		cv2.imshow("All channel of Layers : "+str(name), img_complete)
+		cv2.waitKey(0) == ord('q')
+		# free memory
+		cv2.destroyAllWindows()
 
-	for i,array in inter_out :
-		imax = 0
-		image = array[0][imax]
-		image = cv2.putText(image, text, org, font, fontScale, color, thickness, cv2.LINE_AA, False)
-		cv2.imshow(window_name, image)
-'''
-import itertools
+def image_construct(img, input_, name, Text, smooth=False, alpha=True, DIM=(720,720)):
+	# MinMax Normalization 1
+	img = (img-img.min())/(img.max()-img.min())
+	if smooth :
+		img = skim.transform.pyramid_expand(img, upscale=6, sigma=2)
+	# Resizing with slight blur
+	img = cv2.resize(img, DIM, interpolation = cv2.INTER_AREA)
+	img = cv2.GaussianBlur(img,(5,5),0)
+	# Float to 8bit (0-255)
+	img = (img-img.min())/(img.max()-img.min())
+	img_norm_8U = cv2.normalize(img, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+	# Alpha or Superpose : destination image
+	if alpha :
+		input_bgra = cv2.cvtColor(input_,cv2.COLOR_RGB2RGBA)
+		dst = input_bgra.copy()
+		dst[:,:,3] = img_norm_8U
+	else :
+		img_rgb = cv2.cvtColor(img_norm_8U,cv2.COLOR_GRAY2RGB)
+		dst = cv2.addWeighted(input_,1.0,img_rgb,0.8,0)
+	# add description
+	start_point, end_point = (0,0),(300,30)
+	origin, fontScale, color, thickness = (20, 20), 0.5, (0, 0, 0, 255), 1
+	text = Text[0] + str(name) + Text[1]
+	cv2.rectangle(dst, start_point, end_point, (255, 255, 255, 255), cv2.FILLED)
+	cv2.putText(dst, text, origin, cv2.FONT_HERSHEY_SIMPLEX, fontScale, color, thickness, cv2.LINE_AA, False)
+	return dst
 
-import numpy as np
-from PIL import Image
-from matplotlib import pyplot as plt, cm as cm
-import skimage
-import skimage.transform
+def construct_arrayAnimation(image_input, inter_out, traitment_type, custom_txt, fpl = 6, DIM=(720,720),smooth=False, alpha=True):
+	### Text parameter
+	Text = custom_txt
+	print('[INFO] Transform input image..')
+	input_resize = cv2.resize(image_input, DIM, interpolation = cv2.INTER_AREA)
+	if traitment_type == 0 :
+		# Loop for each layers (frame per layers)
+		input_bgra = cv2.cvtColor(input_resize,cv2.COLOR_RGB2RGBA)
+		arrayList = [input_bgra.copy()]
+		for name,array in inter_out :
+			# Define high level of output response
+			idxmax = np.argsort(array[0].sum(axis=(1,2)).numpy())[::-1]
+			print('[INFO] Extract best feature of layer : '+str(name))
+			for idx in idxmax[:fpl]:
+				img = array[0].numpy()[idx]
+				arrayList += [image_construct(img,input_resize, name, Text).copy()]
+	else :
+		print('[INFO] Extract Attention : ')
+		arrayList = []
+		for name,array in inter_out :
+			img = array[0].numpy()
+			arrayList += fpl*[image_construct(img, input_resize, name, Text, smooth, alpha).copy()]
+	print('[INFO] Feature extracted, ready for animation !')
+	return arrayList
 
-def visualize_att(image_path, seq, alphas, idx2word, endseq='<end>', smooth=True):
-    """
-    Visualizes caption with weights at every word.
+class animate_2dArray():
+	def __init__(self, Array_list, Figsize=(10,10), DPI=60):
+		self.imArray = Array_list
+		# init axes
+		self.fig = plt.figure(figsize=Figsize, dpi=DPI) 
+		self.ax = self.fig.add_subplot(111)
+		self.im = plt.imshow(self.imArray[0])
+		# edit
+		self.fig.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
+		plt.xticks([]), plt.yticks([])
+		# Delete border
+		self.ax.spines['bottom'].set_color('None'); self.ax.spines['top'].set_color('None') 
+		self.ax.spines['right'].set_color('None'); self.ax.spines['left'].set_color('None')
 
-    Adapted from paper authors' repo: https://github.com/kelvinxu/arctic-captions/blob/master/alpha_visualization.ipynb
+	def animation_step(self, i):
+		self.im.set_array(self.imArray[i])
+		return self.im,
 
-    :param image_path: path to image that has been captioned
-    :param seq: caption
-    :param alphas: weights
-    :param idx2word: reverse word mapping, i.e. ix2word
-    :param smooth: smooth weights?
-    """
-
-    image = Image.open(image_path)
-    image = image.resize([14 * 24, 14 * 24], Image.LANCZOS)
-
-    # words = [idx2word[ind] for ind in seq]
-    words = list(itertools.takewhile(lambda word: word != endseq, map(lambda idx: idx2word[idx], iter(seq))))
-
-    for t in range(len(words)):
-        if t > 50:
-            break
-
-        index = int(np.ceil(len(words) / 5.))
-        plt.subplot(index, 5, t + 1)
-
-        plt.text(0, 1, '%s' % (words[t]), color='black', backgroundcolor='white', fontsize=12)
-        plt.imshow(image)
-        current_alpha = alphas[t, :]
-        if smooth:
-            alpha = skimage.transform.pyramid_expand(current_alpha.numpy(), upscale=24, sigma=8)
-        else:
-            alpha = skimage.transform.resize(current_alpha.numpy(), [14 * 24, 14 * 24])
-        if t == 0:
-            plt.imshow(alpha, alpha=0)
-        else:
-            plt.imshow(alpha, alpha=0.8)
-        plt.set_cmap(cm.Greys_r)
-        plt.axis('off')
-
-    plt.show()
-'''
+	def animate(self, name = "output"):
+		self.anim = animation.FuncAnimation(self.fig, self.animation_step, frames=len(self.imArray), blit=False, interval=1)
+		self.anim.save(filename= 'output' + os.path.sep + name +'.mp4', writer='ffmpeg', fps=6) # png for alpha
