@@ -30,16 +30,18 @@ def caption_model(MODEL_DIR,MODEL_NAME):
 	vocab_set = pickle.load(open(MODEL_DIR+'vocab_set.pkl', 'rb')) if os.path.exists(MODEL_DIR+'vocab_set.pkl') else None
 	vocab, word2idx, idx2word, max_len = vocab_set
 	vocab_size = len(vocab)
+	print('[INFO] Vocabulary parameter : ' + str((vocab_size, max_len)))
 	print('[INFO] Importing pretrained model (Datasets : ImageNet for encoder, Flicker8k for decoder)..')
 	checkpoint = torch.load(os.path.join(MODEL_DIR, MODEL_NAME), map_location=device)
 	print('[INFO] Importing pretrained success')
 	print('[INFO] Importing torch model..')
 	model = Captioner(encoded_image_size=14, encoder_dim=2048, attention_dim=ATTENTION_DIM, embed_dim=EMBEDDING_DIM, decoder_dim=DECODER_SIZE, vocab_size=vocab_size,).to(device)
-	if False : print(model.eval()) # show model details
 	print('[INFO] Affect state in torch model..')
 	model.load_state_dict(checkpoint['state_dict'])
+	print('[INFO] Switch models to inference mode..')
+	model.eval()
 	print('[INFO] Torch model ready to use !')
-	return model, word2idx, idx2word
+	return model, checkpoint, word2idx, idx2word
 
 def process_caption(im, model, word2idx, idx2word):
 	print('[INFO] Define checkpoint of intermediate result layer..')
