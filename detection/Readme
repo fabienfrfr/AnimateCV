@@ -1,0 +1,13 @@
+# Animate step of understanding image (BONUS : detection)
+
+More detail in the notebook [here](../notebook_computer-vision_ann.ipynb) (Work in progress)
+
+## Trained model link :
+
+YOLO : https://pjreddie.com/darknet/yolo/ and https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v3_optimal/yolov4.cfg 
+model 5 scale : YOLOv4-5D: An Effective and Efficient Object Detector for Autonomous Driving (https://towardsdatascience.com/yolov4-5d-an-enhancement-of-yolov4-for-autonomous-driving-2827a566be4a)
+
+pose_predictor_68_point :
+
+face_encoder :
+
