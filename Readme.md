@@ -55,5 +55,7 @@ If you have a old nvidia GPU don't compatible with CUDA 10.2 and you want to use
 ```
 
 ELSE (exemple) :
+```bash
 	- specify calculation per CPU in pytorch : torch.load(PATH, map_location=torch.device('cpu'))
 	- OR generalize : torch.load(PATH, map_location=torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+```
