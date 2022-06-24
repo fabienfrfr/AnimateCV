@@ -18,7 +18,7 @@ How does an artificial neural network understand an image? This program is the r
 
 ## Tips :
 
-If you have a old nvidia GPU don't compatible with CUDA 10.2 and you want to use GPU calculation (like me), you need to do some requirement :
+If you have a old nvidia GPU doesn't compatible with CUDA 10.2 and you want to use GPU calculation (like me), you need to do some requirement :
 
 1 - Install the highest version driver :
 ```bash
