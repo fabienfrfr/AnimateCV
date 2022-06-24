@@ -48,6 +48,12 @@ If you have a old nvidia GPU don't compatible with CUDA 10.2 and you want to use
 	- python3.8 -m pip install PACKAGES==VERSION
 	- python3.8 -m pip install torch==1.8.1+cu101 torchvision==0.9.1+cu101 torchaudio==0.8.1 -f https://download.pytorch.org/whl/torch_stable.html --use-deprecated=html5lib
 ```
+
+6 - Use specific python version :
+```bash
+	- python3.8 files.py --arg
+```
+
 ELSE (exemple) :
 	- specify calculation per CPU in pytorch : torch.load(PATH, map_location=torch.device('cpu'))
 	- OR generalize : torch.load(PATH, map_location=torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
