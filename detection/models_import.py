@@ -18,36 +18,39 @@ from utils_math import CenterCropping
 ## Input
 parser = argparse.ArgumentParser(description='Animate an image understanding by a neural network - App')
 parser.add_argument('-i', '--input', type=str, required=False, help="Path of the image to load.")
-parser.add_argument('-imz', '--image_size', default=(480, 480), type=int, nargs="+", help="Resize image.")
+parser.add_argument('-imz', '--image_size', default=(720, 720), type=int, nargs="+", help="Resize image.")
 
 ## Path
 INPUT_DIR = 'input/'
 OUTPUT_DIR = 'output/'
 
-def ViT_dino_model():
+def ViT_dino_model(info=True):
+	if info : logging.root.setLevel(logging.INFO)
+	else : logging.root.setLevel(logging.WARNING)
 	## Variable affectation
 	PATCH_SIZE = 8
 	MODEL_NAME = 'vit_small'
 	## Neural network Initialization
-	print("[INFO] Starting System...")
+	logging.info("Starting System...")
 	device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-	print("[INFO] Calculation type : " + device.type)
-	print('[INFO] Importing build torch model (k=8x8)..')
+	logging.info("Calculation type : " + device.type)
+	logging.info('Importing build torch model (k=8x8)..')
 	model = vits.__dict__[MODEL_NAME](patch_size=PATCH_SIZE, num_classes=0)
-	print('[INFO] Switch models to inference mode..')
+	logging.info('Switch models to inference mode..')
 	for p in model.parameters(): 
 		p.requires_grad = False
 	model.eval(); model.to(device)
-	print('[INFO] Importing pretrained dino model..')
+	logging.info('Importing pretrained dino model..')
 	url = "dino_deitsmall8_300ep_pretrain/dino_deitsmall8_300ep_pretrain.pth" # model used for visualizations in dino paper
 	state_dict = torch.hub.load_state_dict_from_url(url="https://dl.fbaipublicfiles.com/dino/" + url)
 	model.load_state_dict(state_dict, strict=True)
-	print('[INFO] Torch model ready to use !')
+	logging.info('Torch model ready to use !')
 	return model, device
 
 # self supervised detection
 def process_ssd(image, model, device, img_resize, info=True):
 	if info : logging.root.setLevel(logging.INFO)
+	else : logging.root.setLevel(logging.WARNING)
 	logging.info('Define checkpoint of intermediate result layer..')
 	fhooks, vit, name = [], [], []
 	for i,l in enumerate(list(model._modules.keys())):
@@ -77,10 +80,13 @@ def process_ssd(image, model, device, img_resize, info=True):
 	logging.info('Saving checkpoint..')
 	vit = [(n,out) for (n,out) in zip(name,vit)]
 	logging.info('Processing done !')
+	# free memory 
+	del fhooks, model
 	return attention, vit
 
-def extract_vit_feature(vit, last_attention, max=False, info=True):
+def extract_vit_feature(vit, last_attention, img_size, patch_size, head=False, max=False, info=True):
 	if info : logging.root.setLevel(logging.INFO)
+	else : logging.root.setLevel(logging.WARNING)
 	layers_out = []
 	# mean pooling for each layers
 	for v in vit :
@@ -99,13 +105,15 @@ def extract_vit_feature(vit, last_attention, max=False, info=True):
 			else : out = torch.sum(v[1].squeeze(), dim=0)
 			out = out[0][1:]
 		## reshaping and scaling
-		out = out.reshape(args.image_size[0] // model.PATCH_SIZE, args.image_size[1] // model.PATCH_SIZE)
+		out = out.reshape(img_size[0] // patch_size, img_size[1] // patch_size)
 		## save
 		layers_out += [[v[0], out.cpu().numpy()]]
 	# all head
-	layers_out += [["last_output-head"+str(i), last_attention[i]] for i in range(last_attention.shape[0])]
+	if head : layers_out += [["last_output-head"+str(i), last_attention[i]] for i in range(last_attention.shape[0])]
 	# argmax last attention head indice (self-semantique segmentation)
 	layers_out += [["last_output", last_attention.argmax(axis=0)]]
+	# free memory 
+	del vit, last_attention
 	return layers_out
 
 if __name__ == '__main__':

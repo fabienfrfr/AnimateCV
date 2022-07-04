@@ -1,63 +1,95 @@
 # fabienfrfr - 20220628
-import os, argparse, tqdm
+import os, argparse, tqdm, tracemalloc
 import numpy as np, pylab as plt
 import cv2, torch
 import skvideo.io as skio
 
-from models_import import ViT_dino_model, process_ssd
+from models_import import ViT_dino_model, process_ssd, extract_vit_feature
+from utils_math import CenterCropping
+from utils_animate import intermediate_layers_part, semantic_segmentation_part
 
 ## Input
 parser = argparse.ArgumentParser(description='Animate an image understanding by a neural network - App')
 parser.add_argument('-i', '--input', type=str, required=False, help="Path of the image list to load.")
-parser.add_argument('-imz', '--image_size', default=(240, 240), type=int, nargs="+", help="Resize image.")
+parser.add_argument('-imz', '--image_size', default=(480, 480), type=int, nargs="+", help="Resize image.")
 
 ## Path
 INPUT_DIR = 'video/'
 OUTPUT_DIR = 'output/'
 
-@torch.no_grad()
-def extract_ssd_on_davis():
-	pass
+@torch.no_grad() # memory problems... decompose
+def extract_dino(image_path, args):
+	## import model (find solution to delete hook memory leak) with no grad ?
+	model, device = ViT_dino_model(info=False)
+	# print('[INFO] Importing image..')
+	image = cv2.imread(image_path)
+	image = CenterCropping(image)
+	# apply
+	attention, vit = process_ssd(image, model, device, args.image_size,  info=False)
+	# extract feature
+	layers = extract_vit_feature(vit, attention, args.image_size, model.PATCH_SIZE, info=False)
+	# free memory
+	del model, device, image, attention, vit
+	# save feature
+	"""pickle"""
+	return layers
+
+def frame_construction(layers, image_path, resizing=(720,720)):
+	## Image input
+	image = cv2.imread(image_path)
+	image = CenterCropping(image)
+	input_image = cv2.resize(np.uint8(image), (720,720), interpolation = cv2.INTER_AREA)
+	name = ['input_image'] + [l[0] for l in layers]
+	## Intermediate layers part
+	inter_video = intermediate_layers_part(input_image, layers[:-1], resizing)
+	## Output part..
+	out_video = semantic_segmentation_part(input_image, layers[-2][1], layers[-1][1], resizing)
+	## merging
+	frame = np.concatenate([input_image[None][None]]+inter_video+out_video, axis=0)
+	del layers, input_image, inter_video, out_video
+	return frame, name
 
 if __name__ == '__main__':
-	## import model
-	model, device = ViT_dino_model()
+	tracemalloc.start()
 	args = parser.parse_args()
 	## exemple
 	if args.input == None :
 		img_list = sorted(os.listdir(INPUT_DIR), key = lambda im: im.split('.')[0])
-	print('[INFO] Prepare images loop analysis..')
+	img_list = img_list[:2]
+	print('[INFO] Stabilize video before crop (not yet necessary)..')
+	# https://github.com/krutikabapat/Video-Stabilization-using-OpenCV
+	print('[INFO] Images loop analysis..')
 	video = []
 	for t in tqdm.tqdm(range(len(img_list))) :
 		image_path = INPUT_DIR + img_list[t]
-		# print('[INFO] Importing image..')
-		image = cv2.imread(image_path)
-		# apply
-		attentions, attention, vit = process_ssd(image, model, device, args.image_size, info=False)
-		video += [np.sum(attention,axis=0)[None]]
-	print('[INFO] Convert img list to video..')
-	video_ = 255*(np.concatenate(video)-np.min(video))/(np.max(video)-np.min(video))
-	video_[video_ < 2*video_.mean()] = 0
+		# dino layer
+		dino = extract_dino(image_path, args)
+		# to video
+		frame, name = frame_construction(dino, image_path)
+		video += [frame]
+		# free memory
+		del dino
+	video = np.concatenate(video, axis=1)
 	print('[INFO] Writting video..')
-	writer = skio.FFmpegWriter(OUTPUT_DIR + "outputvideo.mp4")
-	for v in video_:
-		#frame = cv2.cvtColor(v.astype(np.uint8), cv2.COLOR_GRAY2BGR)
-		frame = cv2.applyColorMap(v.astype(np.uint8), cv2.COLORMAP_VIRIDIS)
-		#frame = cv2.cvtColor(frame,cv2.COLOR_RGB2BGR)
-		writer.writeFrame(frame)
-	writer.close()
-	# 
-	cv2.imshow('viridis_frame', frame)
-	cv2.waitKey(0) & 0xFF == ord('q')
-	cv2.destroyAllWindows()
+	for i in range(video.shape[0]) :
+		writer = skio.FFmpegWriter(OUTPUT_DIR + "video_"+name[i]+".mp4")
+		for v in video[i] :
+			frame_ = cv2.cvtColor(v, cv2.COLOR_RGB2BGR)
+			writer.writeFrame(frame_)
+		writer.close()
+		plt.imshow(frame_);plt.show()
+
 	print('[INFO] Stopping System')
+	"""
+	snapshot = tracemalloc.take_snapshot()
+	top_stats = snapshot.statistics('traceback')
 
-"""
-import skvideo.io as skio
-import numpy as np, cv2
-
-vid = skio.vread("outputvideo_480.mp4")
-median = np.median(vid)
-vid[vid < 3*vid.mean() + 3*median] = 0
-skio.vwrite("outputvideo.mp4", vid)
-"""
+	# pick the biggest memory block
+	stats = top_stats[:3]
+	for stat in stats :
+		print("%s memory blocks: %.1f KiB" % (stat.count, stat.size / 1024))
+		for line in stat.traceback.format():
+			print(line)
+	# free memory
+	del video, frame, writer
+	"""

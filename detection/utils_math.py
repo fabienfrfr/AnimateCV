@@ -3,6 +3,7 @@
 import numpy as np
 
 def CenterCropping(image):
+	# warning : adapted for opencv imread
 	shape = image.shape
 	idmin, idmax = np.argmin(shape[0:2]), np.argmax(shape[0:2])
 	df = (shape[idmax] - shape[idmin])/2
