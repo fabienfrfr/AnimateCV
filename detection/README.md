@@ -6,6 +6,11 @@ Self-supervised detection - This model is based on DINO [paper](https://arxiv.or
 
 ###### Attribution required : Fabien Furfaro (CC 4.0 BY NC ND SA)
 
+Convert image sequence with transparency to MP4
+```
+ffmpeg -i simple_out_%d.png -vcodec png simple_out.mp4
+```
+
 
 ## Detection with dino
 
