@@ -12,7 +12,7 @@ from utils_animate import intermediate_layers_part, semantic_segmentation_part, 
 ## Input
 parser = argparse.ArgumentParser(description='Animate an image understanding by a neural network - App')
 parser.add_argument('-i', '--input', type=str, required=False, help="Path of the image list to load.")
-parser.add_argument('-imz', '--image_size', default=(480, 480), type=int, nargs="+", help="Resize image.")
+parser.add_argument('-imz', '--image_size', default=(720, 720), type=int, nargs="+", help="Resize image.")
 
 ## Path
 INPUT_DIR = 'video/'
@@ -40,7 +40,7 @@ def frame_construction(layers, image_path, resizing=(720,720)):
 	image = cv2.imread(image_path)
 	image = CenterCropping(image)
 	input_image = cv2.resize(np.uint8(image), resizing, interpolation = cv2.INTER_AREA)
-	name = ['input_image'] + [l[0] for l in layers] + ['semantic_out']
+	name = ['input-image'] + [l[0].replace('_','-') for l in layers] + ['semantic-out']
 	## Intermediate layers part
 	inter_video = intermediate_layers_part(input_image, layers, resizing)
 	## Output part..
@@ -56,7 +56,7 @@ if __name__ == '__main__':
 	## exemple
 	if args.input == None :
 		img_list = sorted(os.listdir(INPUT_DIR), key = lambda im: im.split('.')[0])
-	img_list = img_list[:2]
+	#img_list = img_list[:2]
 	print('[INFO] Stabilize video before crop (not yet necessary)..')
 	# https://github.com/krutikabapat/Video-Stabilization-using-OpenCV
 	print('[INFO] Images loop analysis..')
@@ -73,12 +73,14 @@ if __name__ == '__main__':
 		del dino
 	video, simple_out = np.concatenate(video, axis=1), np.concatenate(simple_out, axis=0)
 	print('[INFO] Writting video..')
-	simple_blending = rgba_blending(simple_out) # "#f2f2f2ff" or "#e6e6e6ff"
-	skio.vwrite(OUTPUT_DIR + "video_simpleout.mp4", simple_blending)
+	simple_blending = rgba_blending(simple_out, "#00000000", 0.33) # "#f2f2f2ff" or "#e6e6e6ff"
+	skio.vwrite(OUTPUT_DIR + "video_self-semantic.mp4", simple_blending)
 	#np.save('out_video/simple_out.npy', simple_out) # simple = np.load('out_video/simple_out.npy')
 	#np.save('out_video/all.npy', video) # video = np.load('out_video/all.npy')
+	"""
 	for i in range(simple_out.shape[0]) :
 		skim.io.imsave('out_video/simple_out_'+str(i)+'.png',simple_out[i])
+	"""
 	for i in range(video.shape[0]) :
 		writer = skio.FFmpegWriter(OUTPUT_DIR + "video_"+name[i]+".mp4")
 		for v in video[i] :
@@ -99,8 +101,3 @@ if __name__ == '__main__':
 	# free memory
 	del video, frame, writer
 	"""
-
-"""
-color_grey = '#f2f2f2ff'
-color_grey = '#e6e6e6ff'
-"""

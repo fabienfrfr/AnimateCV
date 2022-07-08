@@ -12,11 +12,13 @@ def hex_to_rvba(value):
     lv = len(value)
     return tuple(int(value[i:i+lv//3], base=16) for i in range(0, lv, lv//3))
 
-def rgba_blending(img_seq, color = '#ffffffff'):
+def rgba_blending(img_seq, color = '#ffffffff', thresh = 0.5):
 	c = hex_to_rvba(color)
+	f = np.vectorize(lambda x : 1/(1+np.exp(-10*(x-thresh))))
+	s = f(img_seq[:,:,:,3]/255.)
 	rgb_blend = []
 	for i in range(3) :
-		rgb_blend += [(((1 - img_seq[:,:,:,3]/255.) * c[i]) + (img_seq[:,:,:,3]/255. * img_seq[:,:,:,i]))[:,:,:,None]]
+		rgb_blend += [(((1 - s) * c[i]) + (s * img_seq[:,:,:,i]))[:,:,:,None]]
 	rgb_blend = np.concatenate(rgb_blend, axis=3)
 	return np.uint8(rgb_blend)
 
@@ -81,5 +83,7 @@ def semantic_segmentation_part(input_image, head_norm, last_output, resizing, NB
 	simple = cv2.applyColorMap(simple, cv2.COLORMAP_VIRIDIS)
 	simple = cv2.cvtColor(simple, cv2.COLOR_RGB2BGR) # for matplotlib
 	alpha = cv2.resize(alpha, resizing, interpolation = cv2.INTER_AREA)
-	simple = np.concatenate((simple, alpha[:,:,None]), axis=2)
+	alpha[mask == 0] = alpha[mask == 0] /10.
+	simple = np.concatenate((simple, np.uint8(alpha[:,:,None])), axis=2)
 	return image[None][None], simple[None]
+

@@ -4,6 +4,15 @@ See the notebook [here](../notebook_computer-vision_ann.ipynb) (Work in progress
 
 Self-supervised detection - This model is based on DINO [paper](https://arxiv.org/pdf/2104.14294.pdf).
 
+```bash
+"A Vision Transformer detect a B-Boy doing a flare"
+
+How does an artificial neural network understand an image? This self-supervised program is the result of a learning process that automatically detect an object on an image with semantic segmentation and where each step of the process is represented in this animation. More details in my github notebook.
+
+#deeplearning #coder #artificialintelligence #computerscience #machinelearning #ai #neuralnetwork #creativecoding #breakdance #tech #dino #facebook #attention #pytorch #opencv
+```
+
+
 ###### Attribution required : Fabien Furfaro (CC 4.0 BY NC ND SA)
 
 Convert image sequence with transparency to MP4
