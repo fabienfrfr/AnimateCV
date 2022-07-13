@@ -44,7 +44,7 @@ def caption_model(MODEL_DIR,MODEL_NAME):
 	return model, checkpoint, word2idx, idx2word
 
 def process_caption(im, model, word2idx, idx2word):
-	print('[INFO] Define checkpoint of intermediate result layer..')
+	print('[INFO] Define checkpoint of intermediate result layer (bootleneck)..')
 	fhooks, encoder, name = [], [], []
 	for i,l in enumerate(list(model.encoder.resnet._modules.keys())):
 		name += [copy.deepcopy(l)]
@@ -62,7 +62,7 @@ def process_caption(im, model, word2idx, idx2word):
 
 if __name__ == '__main__':
 	## import model
-	model, word2idx, idx2word = caption_model(MODEL_DIR,MODEL_NAME)
+	model, checkpoint, word2idx, idx2word = caption_model(MODEL_DIR,MODEL_NAME)
 	args = parser.parse_args()
 	## exemple
 	print('[INFO] Importing image')
@@ -76,7 +76,8 @@ if __name__ == '__main__':
 	image = cv2.imread(image_path)
 	image = cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
 	## apply
-	encod_out, inter_out, capidx, alpha, caption_pred = process_caption(image, model, word2idx, idx2word)
+	im = torch.tensor(np.rollaxis(image, -1,0)/255., dtype=torch.float32)
+	encod_out, inter_out, capidx, alpha, caption_pred = process_caption(im, model, word2idx, idx2word)
 	print('[INFO] Results : ' + caption_pred)
 	plt.imshow(image); plt.show()
 	print('[INFO] Stopping System')
