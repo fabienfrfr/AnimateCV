@@ -24,6 +24,7 @@ def shell_concat(MODEL_DIR,MODEL_NAME):
 	stream_out = os.popen('FILE='+MODEL_DIR+MODEL_NAME+';[ -f $FILE ] && echo "exist!" || echo "not exist.."').read()
 	if stream_out == "not exist..\n" :
 		os.system("cat "+ MODEL_DIR +"x* > "+ MODEL_DIR +MODEL_NAME)
+	assert os.path.exists(MODEL_DIR+MODEL_NAME), "%s doesn't exist !" % (MODEL_DIR+MODEL_NAME)
 	print("[INFO] Model concatenated !")
 
 def srgan_generator_model(MODEL_DIR,MODEL_NAME):
