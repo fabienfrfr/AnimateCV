@@ -14,6 +14,10 @@ MODEL_NAME = "checkpoint_srgan.pth.tar"
 INPUT_DIR = 'input/'
 OUTPUT_DIR = 'output/'
 
+# some constant
+imagenet_mean = torch.FloatTensor([0.485, 0.456, 0.406]).unsqueeze(1).unsqueeze(2)
+imagenet_std = torch.FloatTensor([0.229, 0.224, 0.225]).unsqueeze(1).unsqueeze(2)
+
 ## function
 def shell_concat(MODEL_DIR,MODEL_NAME):
 	print("[INFO] Verify if model concatenated...")
@@ -61,9 +65,10 @@ if __name__ == '__main__':
 		plt.imshow(cv2.cvtColor(image,cv2.COLOR_BGR2RGB)); plt.show()
 		print('[INFO] Converting image')
 		blob = cv2.dnn.blobFromImage(image, 1/255, image.shape[:2], (0,0,0), swapRB=True, crop=False)
-		lr_imgs = torch.tensor(blob)
+		lr_imgs = torch.tensor(blob).squeeze()
+		lr_imgs = (lr_imgs - imagenet_mean) / imagenet_std
 		print('[INFO] Apply image in model')
-		out = model(lr_imgs)  # (1, 3, w, h), in [-1, 1]
+		out = model(lr_imgs.unsqueeze(0))  # (1, 3, w, h), in [-1, 1]
 		img = np.moveaxis(out[0].cpu().numpy(), 0,2)
 		img = cv2.normalize(img, None, alpha=0,beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
 		# show result
