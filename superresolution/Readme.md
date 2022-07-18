@@ -13,7 +13,7 @@ Le modèle a été entrainé par **sgrvinod**. Pour etre inclu dans le GitHub, i
 split -b 20M checkpoint_srgan.pth.tar --verbose
 ```
 
-Pour l'utilisation, soit vous le telechargé à l'adresse https://drive.google.com/file/d/1_PJ1Uimbr0xrPjE8U3Q_bG7XycGgsbVo/, soit vous le concaténé via la commade :
+Pour l'utilisation, soit vous le telechargé à l'adresse https://drive.google.com/file/d/1_PJ1Uimbr0xrPjE8U3Q_bG7XycGgsbVo/, soit vous le concaténé via la commade (implementé en python) :
 
 ```bash
 cat x* > checkpoint_srgan.pth.tar

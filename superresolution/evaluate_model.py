@@ -15,6 +15,13 @@ INPUT_DIR = 'input/'
 OUTPUT_DIR = 'output/'
 
 ## function
+def shell_concat(MODEL_DIR,MODEL_NAME):
+	print("[INFO] Verify if model concatenated...")
+	stream_out = os.popen('FILE='+MODEL_DIR+MODEL_NAME+';[ -f $FILE ] && echo "exist!" || echo "not exist.."').read()
+	if stream_out == "not exist..\n" :
+		os.system("cat "+ MODEL_DIR +"x* > "+ MODEL_DIR +MODEL_NAME)
+	print("[INFO] Model concatenated !")
+
 def srgan_generator_model(MODEL_DIR,MODEL_NAME):
 	## Variable affectation
 
@@ -32,6 +39,8 @@ def srgan_generator_model(MODEL_DIR,MODEL_NAME):
 
 ## run
 if __name__ == '__main__':
+	## verify if model exist
+	shell_concat(MODEL_DIR,MODEL_NAME)
 	## import model
 	model = srgan_generator_model(MODEL_DIR,MODEL_NAME)
 	args = parser.parse_args()
@@ -61,4 +70,4 @@ if __name__ == '__main__':
 		plt.imshow(img); plt.show()
 		# save
 		img_bgr = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-		cv2.imwrite(OUTPUT_DIR + img_name.split('_')[0] + '_hr.jpg', img_bgr) 
+		cv2.imwrite(OUTPUT_DIR + img_name.split('_')[0] + '_hr.jpg', img_bgr)
