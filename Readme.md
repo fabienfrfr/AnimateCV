@@ -30,6 +30,7 @@ If you have a old nvidia GPU doesn't compatible with CUDA 10.2 and you want to u
 	- sudo ubuntu-drivers autoinstall
 	- ubuntu-drivers devices # see the last version
 	- sudo apt install nvidia-driver-XXX-XXX # for me : 418-server
+	- sudo apt install nvidia-utils-XXX-XXX # idem
 	#- sudo apt-get install nvidia-modprobe
 ```
 2 - Intall toolkit (following ubuntu version compatibilities) :
