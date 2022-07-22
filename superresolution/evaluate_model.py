@@ -1,7 +1,8 @@
 # fabienfrfr - 20220709
 ## Import package
+import torch ## need to be the first package launched in old version (core dumped otherwise..)
 import numpy as np, pylab as plt
-import torch, cv2
+import cv2
 import argparse, os
 
 ## Input
@@ -32,7 +33,9 @@ def srgan_generator_model(MODEL_DIR,MODEL_NAME):
 
 	## Neural network Initialization
 	print("[INFO] Starting System...")
-	device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+	v,vv = torch.cuda.get_device_capability()
+	cc = 0 if float(torch.__version__[:3]) <= 0.3 else 3.5
+	device = torch.device('cuda:0' if (torch.cuda.is_available() & (v+0.1*vv > cc)) else 'cpu')
 	print("[INFO] Calculation type : " + device.type)
 	print('[INFO] Importing pretrained model..')
 	checkpoint = torch.load(MODEL_DIR+MODEL_NAME, map_location=device)['generator']
@@ -40,14 +43,14 @@ def srgan_generator_model(MODEL_DIR,MODEL_NAME):
 	checkpoint.eval()
 	model = checkpoint
 	print('[INFO] Torch model ready to use !')
-	return model
+	return model, device
 
 ## run
 if __name__ == '__main__':
 	## verify if model exist
 	shell_concat(MODEL_DIR,MODEL_NAME)
 	## import model
-	model = srgan_generator_model(MODEL_DIR,MODEL_NAME)
+	model, device = srgan_generator_model(MODEL_DIR,MODEL_NAME)
 	args = parser.parse_args()
 	## exemple
 	print('[INFO] Testing model')
@@ -68,8 +71,9 @@ if __name__ == '__main__':
 		blob = cv2.dnn.blobFromImage(image, 1/255, image.shape[:2], (0,0,0), swapRB=True, crop=False)
 		lr_imgs = torch.tensor(blob).squeeze()
 		lr_imgs = (lr_imgs - imagenet_mean) / imagenet_std
+		lr_imgs = lr_imgs.unsqueeze(0).to(device)
 		print('[INFO] Apply image in model')
-		out = model(lr_imgs.unsqueeze(0))  # (1, 3, w, h), in [-1, 1]
+		out = model(lr_imgs)  # (1, 3, w, h), in [-1, 1]
 		img = np.moveaxis(out[0].cpu().numpy(), 0,2)
 		img = cv2.normalize(img, None, alpha=0,beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
 		# show result
