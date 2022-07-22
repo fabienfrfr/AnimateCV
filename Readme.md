@@ -29,7 +29,7 @@ Other, verify in https://developer.nvidia.com/cuda-gpus the compute capability o
 
 	- pip install torch-0.3.0.post4-cp36-cp36m-linux_x86_64.whl
 
-Note : uninstall oldest pytorch if installed ! But, you need to add many function changement (name, etc.), like that :
+Note : uninstall oldest pytorch if installed ! But, you need to add many function changement (name, etc.) if you want to use my code, like that :
 
 ```bash
 def rename(newname):
@@ -46,7 +46,7 @@ def f():
 print f.__name__
 ```
 
-Creation of "utils_oldpytorch" in progress..
+Creation of "utils_oldpytorch" in progress.. not recommended now !
 
 1 - Install the highest version driver :
 ```bash
