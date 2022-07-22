@@ -25,9 +25,33 @@ If you have a old nvidia GPU doesn't compatible with CUDA 10.2 and you want to u
 	- Nvidia doesnt maintain old version of CUDA in new Ubuntu version # for exemple use ubuntu 18.04 LTS for 418-server
 ```
 
+Other, verify in https://developer.nvidia.com/cuda-gpus the compute capability of your gpu,  the minimum cuda capability that pytorch support is 3.5 (CUDA capability 3.0 support was dropped in v0.3.1). Otherwise, you install pytorch with source (whl file), minimum is 0.3.0, for exemple, is "cu75/torch-0.3.0.post4-cp36-cp36m-linux_x86_64.whl", if your python is 3.6. Download, and run command :
+
+	- pip install torch-0.3.0.post4-cp36-cp36m-linux_x86_64.whl
+
+Note : uninstall oldest pytorch if installed ! But, you need to add many function changement (name, etc.), like that :
+
+```bash
+def rename(newname):
+    def decorator(f):
+        f.__name__ = newname
+        return f
+    return decorator
+```
+And then use it like this:
+```bash
+@rename('new name')
+def f():
+    pass
+print f.__name__
+```
+
+Creation of "utils_oldpytorch" in progress..
+
 1 - Install the highest version driver :
 ```bash
-	- sudo ubuntu-drivers autoinstall
+	- sudo add-apt-repository ppa:graphics-drivers/ppa # update after
+	- sudo ubuntu-drivers autoinstall # before : apt-get remove --purge nvidia-*
 	- ubuntu-drivers devices # see the last version
 	- sudo apt install nvidia-driver-XXX-XXX # for me : 418-server
 	- sudo apt install nvidia-utils-XXX-XXX # idem
@@ -35,7 +59,7 @@ If you have a old nvidia GPU doesn't compatible with CUDA 10.2 and you want to u
 ```
 2 - Intall toolkit (following ubuntu version compatibilities) :
 ```bash
-	- sudo apt install nvidia-cuda-toolkit
+	- sudo apt install nvidia-cuda-toolkit gcc-6
 	(OR)
 	- wget https://developer.nvidia.com/compute/cuda/10.1/Prod/local_installers/cuda-repo-ubuntu1804-10-1-local-10.1.105-418.39_1.0-1_amd64.deb # ubuntu 18.04 but compatible in 20.04
 	- sudo apt list --installed | grep cuda-repo-ubuntu1804-10-1-local-10.1.105-418.39
@@ -46,9 +70,22 @@ If you have a old nvidia GPU doesn't compatible with CUDA 10.2 and you want to u
 3 - Testing :
 ```bash
 	- nvidia-smi # if doesn't works, reinstall driver and doesn't install toolkit
-	- nvcc --version # if toolkit it's installed (not necessary)
+	- nvcc --version # if toolkit it's installed
 ```
-4 - Install adapted python version (for old pytorch, it's python 3.8) :
+
+Cuda 9.1 & drivers 390 in Ubuntu 18.04 (Python 3.6):
+
+	- sudo apt-get install libjpeg-dev zlib1g-dev
+	- sudo apt-get install openjdk-8-jdk git python-dev python3-dev python-numpy python3-numpy python-six python3-six build-essential python-pip python3-pip python-virtualenv swig python-wheel python3-wheel libcurl3-dev libcupti-dev
+
+	- https://developer.nvidia.com/cudnn (need to register to install cuDNN)
+		- libcudnn7 (deb file download)
+
+	- pip3 install pillow==6.2.0 scikit-build cmake
+	- pip3 install torch==1.1.0 torchvision==0.3.0 -f https://download.pytorch.org/whl/cu90/torch_stable.html
+	- (in Python3) torch.cuda.is_available()
+
+4 - Install adapted python version (for old pytorch, it's python 3.8 max!) :
 ```bash
 	- sudo apt install software-properties-common -y
 	- sudo add-apt-repository ppa:deadsnakes/ppa -y
