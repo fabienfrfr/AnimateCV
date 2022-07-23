@@ -49,6 +49,9 @@ print f.__name__
 ```
 Creation of "utils_oldpytorch" in progress.. not recommended now ! Or install python specific version for test ! (a different version of native, if 3.6, choose 3.5 for exemple)
 
+	- pip install --upgrade pip setuptools wheel
+	- pip install scikit-build cmake
+
 1 - Install the highest version driver :
 ```bash
 	- sudo add-apt-repository ppa:graphics-drivers/ppa # update after
