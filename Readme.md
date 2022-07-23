@@ -25,11 +25,13 @@ If you have a old nvidia GPU doesn't compatible with CUDA 10.2 and you want to u
 	- Nvidia doesnt maintain old version of CUDA in new Ubuntu version # for exemple use ubuntu 18.04 LTS for 418-server
 ```
 
-Other, verify in https://developer.nvidia.com/cuda-gpus the compute capability of your gpu,  the minimum cuda capability that pytorch support is 3.5 (CUDA capability 3.0 support was dropped in v0.3.1). Otherwise, you install pytorch with source (whl file), minimum is 0.3.0, for exemple, is "cu75/torch-0.3.0.post4-cp36-cp36m-linux_x86_64.whl", if your python is 3.6. Download, and run command :
+Other, verify in https://developer.nvidia.com/cuda-gpus the compute capability of your gpu,  the minimum cuda capability that pytorch support is 3.5 (CUDA capability 3.0 support was dropped in v0.3.1). Otherwise, you install pytorch with source (whl file : https://pytorch.org/get-started/previous-versions/), minimum is 0.3.0, for exemple, is "cu75/torch-0.3.0.post4-cp36-cp36m-linux_x86_64.whl", if your python is 3.6. Download, and run command (order is important) :
 
-	- pip install torch-0.3.0.post4-cp36-cp36m-linux_x86_64.whl
+	- python3.5 -m pip install torchvision==0.2.1 # adapted for cuda9
+	- python3.5 -m pip uninstall torch
+	- pip install torch-0.3.0.post4-cp35-cp35m-linux_x86_64.whl
 
-Note : uninstall oldest pytorch if installed ! But, you need to add many function changement (name, etc.) if you want to use my code, like that :
+But.. you need to add many function changement (name, etc.) if you want to use my code, like that (for exemple, the very basic function "tensor", is "Tensor" in very old version) :
 
 ```bash
 def rename(newname):
@@ -45,8 +47,7 @@ def f():
     pass
 print f.__name__
 ```
-
-Creation of "utils_oldpytorch" in progress.. not recommended now !
+Creation of "utils_oldpytorch" in progress.. not recommended now ! Or install python specific version for test ! (a different version of native, if 3.6, choose 3.5 for exemple)
 
 1 - Install the highest version driver :
 ```bash
@@ -91,6 +92,7 @@ Cuda 9.1 & drivers 390 in Ubuntu 18.04 (Python 3.6):
 	- sudo add-apt-repository ppa:deadsnakes/ppa -y
 	- sudo apt install python3.8 -y
 	- sudo apt install python3.8-dev python3.8-venv python3.8-distutils python3.8-lib2to3 python3.8-gdbm python3.8-tk -y
+		- sudo apt install python3.5-dev python3.5-venv python3.5-gdbm python3.5-tk -y
 ```
 5 - Install python package in 3.8 specific version :
 ```bash
