@@ -24,7 +24,7 @@ def caption_model(MODEL_DIR,MODEL_NAME):
 
 	## Neural network Initialization
 	print("[INFO] Starting System...")
-	v,vv = torch.cuda.get_device_capability()
+	v,vv = torch.cuda.get_device_capability(0)
 	cc = 0 if float(torch.__version__[:3]) <= 0.3 else 3.5
 	device = torch.device('cuda:0' if (torch.cuda.is_available() & (v+0.1*vv > cc)) else 'cpu')
 	print("[INFO] Calculation type : " + device.type)
