@@ -159,5 +159,8 @@ You can build with docker by (read and follow instruction in Dockefile) :
 	- sudo docker pull pytorch/pytorch:1.6.0-cuda10.1-cudnn7-runtime
 	# - sudo docker pull pytorch/torchserve:0.2.0-cuda10.1-cudnn7-runtime
 
+
+	- sudo docker run -it pytorch/pytorch:1.6.0-cuda10.1-cudnn7-runtime
+	
 (delete all : sudo docker system prune -a)
 (Based on https://www.youtube.com/watch?v=iIUZHi0z8NI)
