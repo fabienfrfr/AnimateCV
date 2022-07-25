@@ -24,33 +24,14 @@ If you have a old nvidia GPU doesn't compatible with CUDA 10.2 and you want to u
 ```bash
 	- Nvidia doesnt maintain old version of CUDA in new Ubuntu version # for exemple use ubuntu 18.04 LTS for 418-server
 ```
+Other, verify in https://developer.nvidia.com/cuda-gpus the compute capability of your gpu,  the minimum cuda capability that pytorch support is 3.5 (CUDA capability 3.0 support was dropped in v0.3.1). 
 
-Other, verify in https://developer.nvidia.com/cuda-gpus the compute capability of your gpu,  the minimum cuda capability that pytorch support is 3.5 (CUDA capability 3.0 support was dropped in v0.3.1). Otherwise, you install pytorch with source (whl file : https://pytorch.org/get-started/previous-versions/), minimum is 0.3.0, for exemple, is "cu75/torch-0.3.0.post4-cp36-cp36m-linux_x86_64.whl", if your python is 3.6. Download, and run command (order is important) :
+If you have an GPU with compute compatibilities < 3.5, you have 2 possibilities :
 
-	- python3.5 -m pip install torchvision==0.2.1 # adapted for cuda9
-	- python3.5 -m pip uninstall torch
-	- pip install torch-0.3.0.post4-cp35-cp35m-linux_x86_64.whl
+- 1) Install an very old PyTorch
+- 2) Build PyTorch from source
 
-But.. you need to add many function changement (name, etc.) if you want to use my code, like that (for exemple, the very basic function "tensor", is "Tensor" in very old version) :
-
-```bash
-def rename(newname):
-    def decorator(f):
-        f.__name__ = newname
-        return f
-    return decorator
-```
-And then use it like this:
-```bash
-@rename('new name')
-def f():
-    pass
-print f.__name__
-```
-Creation of "utils_oldpytorch" in progress.. not recommended now ! Or install python specific version for test ! (a different version of native, if 3.6, choose 3.5 for exemple)
-
-	- pip install --upgrade pip setuptools wheel
-	- pip install scikit-build cmake
+See in bellow.
 
 1 - Install the highest version driver :
 ```bash
@@ -63,7 +44,7 @@ Creation of "utils_oldpytorch" in progress.. not recommended now ! Or install py
 ```
 2 - Intall toolkit (following ubuntu version compatibilities) :
 ```bash
-	- sudo apt install nvidia-cuda-toolkit gcc-6
+	- sudo apt install nvidia-cuda-toolkit #gcc-6 (or 5)
 	(OR)
 	- wget https://developer.nvidia.com/compute/cuda/10.1/Prod/local_installers/cuda-repo-ubuntu1804-10-1-local-10.1.105-418.39_1.0-1_amd64.deb # ubuntu 18.04 but compatible in 20.04
 	- sudo apt list --installed | grep cuda-repo-ubuntu1804-10-1-local-10.1.105-418.39
@@ -121,3 +102,62 @@ ELSE (exemple) :
 	- OR generalize : torch.load(PATH, map_location=torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 	- doesnt use command like "tensor.gpu()" directly ! use conditional statement
 ```
+
+## Old PyTorch
+
+
+1 - Install an very old PyTorch
+
+You install pytorch with source (whl file : https://pytorch.org/get-started/previous-versions/), minimum is 0.3.0, for exemple, is "cu75/torch-0.3.0.post4-cp36-cp36m-linux_x86_64.whl", if your python is 3.6. Download, and run command (order is important) :
+
+	- python3.5 -m pip install torchvision==0.2.1 # adapted for cuda9
+	- python3.5 -m pip uninstall torch
+	- pip install torch-0.3.0.post4-cp35-cp35m-linux_x86_64.whl
+
+But.. you need to add many function changement (name, etc.) if you want to use my code, like that (for exemple, the very basic function "tensor", is "Tensor" in very old version) :
+
+```bash
+def rename(newname):
+    def decorator(f):
+        f.__name__ = newname
+        return f
+    return decorator
+```
+And then use it like this:
+```bash
+@rename('new name')
+def f():
+    pass
+print f.__name__
+```
+Creation of "utils_oldpytorch" in progress.. not recommended now ! Or install python specific version for test !
+
+	- pip install --upgrade pip setuptools wheel
+	- pip install scikit-build cmake
+
+
+2 - Build from source
+
+To build from source, you need to see precisely your cuda, gcc, python, cudnn version and after you can build following the good realese. When you build yourself, pytorch go more faster.
+
+See following the good branch, and the procedure in pytorch readme :
+
+```bash
+git clone --recursive https://github.com/pytorch/pytorch # see specific branch checkout
+	# git clone -b v1.0.1 --recursive https://github.com/pytorch/pytorch 
+	# git clone -b v1.1.0 --recursive https://github.com/pytorch/pytorch
+	# git clone -b v1.4 --recursive https://github.com/pytorch/pytorch
+	# git clone -b release/1.9 --recursive https://github.com/pytorch/pytorch
+```
+
+You can build with docker by (read and follow instruction in Dockefile) :
+
+	# - docker run -it
+	# - sudo docker build . # (OR) sudo docker build - < Dockerfile
+	# - sudo docker pull pytorch/torchserve:0.2.0-cuda10.1-cudnn7-runtime
+	# - sudo docker pull pytorch/pytorch
+	- sudo docker pull pytorch/pytorch:1.6.0-cuda10.1-cudnn7-runtime
+	# - sudo docker pull pytorch/torchserve:0.2.0-cuda10.1-cudnn7-runtime
+
+(delete all : sudo docker system prune -a)
+(Based on https://www.youtube.com/watch?v=iIUZHi0z8NI)
