@@ -144,7 +144,7 @@ My spec :
 
 - Nvidia Quadro K1100M (Cuda compute capability 3.0)
 - Ubuntu 20.04 (driver-418-server + cuda10.1 + python3.8 per default) - recommanded
-- Cudnn8 (Installed by libcudnn8_8.0.5.39-1+cuda10.1_amd64.deb : normally adapted for 16.04, but it's works -- Download in : https://developer.nvidia.com/rdp/cudnn-archive, need registration)
+- Cudnn8 (Installed by libcudnn8_8.0.5.39-1+cuda10.1_amd64.deb : normally adapted for 18.04, but it's works -- Download in : https://developer.nvidia.com/rdp/cudnn-archive, need registration)
 
 
 If you are a same spec (very good luck for you), I can send the wheel files build to install by pip.
@@ -194,6 +194,9 @@ which python
 which pip
 python --version
 pip --version
+# if you want test before install
+./configure --help | less # (q) to quit / for classic install, not include in pytorch
+make
 ```
 
 
