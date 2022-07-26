@@ -138,7 +138,7 @@ Creation of "utils_oldpytorch" in progress.. not recommended now ! Or install py
 	- pip install scikit-build cmake
 
 
-2 - Build from source (highly recommanded, but long way)
+2 - Build from source (highly recommanded, but long way : ~ 6h)
 
 My spec :
 
@@ -181,6 +181,8 @@ git submodule update --init
 export CMAKE_CXX_COMPILER=g++-7 # or make default
 export TORCH_CUDA_ARCH_LIST=3.0 # or =all
 python3 setup.py install
+# if you want to share, rather use : 
+python3 setup.py bdist_wheel
 ```
 
 (Advice) Use virtual environment for installation test (install requirement also) :
