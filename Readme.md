@@ -50,6 +50,8 @@ See in bellow.
 	- sudo apt list --installed | grep cuda-repo-ubuntu1804-10-1-local-10.1.105-418.39
 	(OR)
 	- wget https://developer.nvidia.com/compute/cuda/10.1/Prod/local_installers/cuda_10.1.168_418.67_linux.run
+	
+	#- https://developer.nvidia.com/compute/cuda/9.1/Prod/local_installers/cuda_9.1.85_387.26_linux
 ```
 
 3 - Testing :
@@ -136,21 +138,64 @@ Creation of "utils_oldpytorch" in progress.. not recommended now ! Or install py
 	- pip install scikit-build cmake
 
 
-2 - Build from source
+2 - Build from source (highly recommanded, but long way)
+
+My spec :
+
+- Nvidia Quadro K1100M (Cuda compute capability 3.0)
+- Ubuntu 20.04 (driver-418-server + cuda10.1 + python3.8 per default) - recommanded
+- Cudnn8 (Installed by libcudnn8_8.0.5.39-1+cuda10.1_amd64.deb : normally adapted for 16.04, but it's works -- Download in : https://developer.nvidia.com/rdp/cudnn-archive, need registration)
+
+
+If you are a same spec (very good luck for you), I can send the wheel files build to install by pip.
 
 To build from source, you need to see precisely your cuda, gcc, python, cudnn version and after you can build following the good realese. When you build yourself, pytorch go more faster.
 
 See following the good branch, and the procedure in pytorch readme :
 
 ```bash
-git clone --recursive https://github.com/pytorch/pytorch # see specific branch checkout
+sudo apt install cmake
+pip3 install numpy ninja pyyaml mkl-include setuptools cmake cffi typing_extensions future six requests dataclasses
+git clone --recursive https://github.com/pytorch/pytorch # see specific branch checkout (OR :)
 	# git clone -b v1.0.1 --recursive https://github.com/pytorch/pytorch 
 	# git clone -b v1.1.0 --recursive https://github.com/pytorch/pytorch
-	# git clone -b v1.4 --recursive https://github.com/pytorch/pytorch
-	# git clone -b release/1.9 --recursive https://github.com/pytorch/pytorch
+	# git clone --depth 1 -b lts/release/1.8 --recursive https://github.com/pytorch/pytorch (recommanded --> Cuda 9 compatibility)
 ```
 
-You can build with docker by (read and follow instruction in Dockefile) :
+(Advice) You need to switch between multiple gcc compiler :
+
+	- sudo apt install build-essential gcc
+	- sudo apt-get install gcc-7 g++-7 -y
+	- sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 7
+	- sudo ln -s /usr/bin/gcc-7 /usr/bin/gcc # default
+	- sudo ln -s /usr/bin/g++-7 /usr/bin/g++ # default
+	- sudo ln -s /usr/bin/gcc-7 /usr/bin/cc # default
+	- sudo ln -s /usr/bin/g++-7 /usr/bin/c++ # default
+	- sudo update-alternatives --config gcc # gcc --version
+
+Basicaly the command sequence is :
+
+```bash
+cd ~/pytorch
+git submodule update --init
+export CMAKE_CXX_COMPILER=g++-7 # or make default
+export TORCH_CUDA_ARCH_LIST=3.0 # or =all
+python3 setup.py install
+```
+
+(Advice) Use virtual environment for installation test (install requirement also) :
+
+```bash
+python3 -m venv $HOME/venv
+source $HOME/venv/bin/activate
+which python
+which pip
+python --version
+pip --version
+```
+
+
+Also, you can build with docker by (read and follow instruction in Dockefile) :
 
 	# - docker run -it
 	# - sudo docker build . # (OR) sudo docker build - < Dockerfile
