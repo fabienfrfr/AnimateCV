@@ -42,9 +42,9 @@ See in bellow.
 	- sudo apt install nvidia-utils-XXX-XXX # idem
 	#- sudo apt-get install nvidia-modprobe
 ```
-2 - Intall toolkit (following ubuntu version compatibilities) :
+2 - Intall toolkit (following ubuntu version compatibilities : https://developer.nvidia.com/cuda-toolkit-archive) :
 ```bash
-	- sudo apt install nvidia-cuda-toolkit #gcc-6 (or 5)
+	- sudo apt install nvidia-cuda-toolkit
 	(OR)
 	- wget https://developer.nvidia.com/compute/cuda/10.1/Prod/local_installers/cuda-repo-ubuntu1804-10-1-local-10.1.105-418.39_1.0-1_amd64.deb # ubuntu 18.04 but compatible in 20.04
 	- sudo apt list --installed | grep cuda-repo-ubuntu1804-10-1-local-10.1.105-418.39
@@ -164,13 +164,16 @@ git clone --recursive https://github.com/pytorch/pytorch # see specific branch c
 
 (Advice) You need to switch between multiple gcc compiler :
 
-	- sudo apt install build-essential gcc
+	- sudo apt install build-essential gcc software-properties-common
+	- sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+		- sudo gedit /etc/apt/sources.list
+		- deb http://fr.archive.ubuntu.com/ubuntu/ bionic main universe (add to file, fr=france) 
 	- sudo apt-get install gcc-7 g++-7 -y
 	- sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 7
-	- sudo ln -s /usr/bin/gcc-7 /usr/bin/gcc # default
-	- sudo ln -s /usr/bin/g++-7 /usr/bin/g++ # default
-	- sudo ln -s /usr/bin/gcc-7 /usr/bin/cc # default
-	- sudo ln -s /usr/bin/g++-7 /usr/bin/c++ # default
+		- sudo ln -s /usr/bin/gcc-7 /usr/bin/gcc # default
+		- sudo ln -s /usr/bin/g++-7 /usr/bin/g++ # default
+		- sudo ln -s /usr/bin/gcc-7 /usr/bin/cc # default
+		- sudo ln -s /usr/bin/g++-7 /usr/bin/c++ # default
 	- sudo update-alternatives --config gcc # gcc --version
 
 Basicaly the command sequence is :
@@ -180,10 +183,16 @@ cd ~/pytorch
 git submodule update --init
 export CMAKE_CXX_COMPILER=g++-7 # or make default
 export TORCH_CUDA_ARCH_LIST=3.0 # or =all
-python3 setup.py install
+python3 setup.py install > build.log
 # if you want to share, rather use : 
 python3 setup.py bdist_wheel
 ```
+
+Error (not with bdist_wheel) :
+	- error: could not create '/usr/lib/python3.8/site-packages': Permission denied (USE) sudo ?
+	- "torch/C extension rather than C extension" (USE) python3 setup.py develop && python -c "import torch"
+	- torch.C.cuda_getDeviceCount() > 0 : incompatible driver-cuda (USE) other driver.
+
 
 (Advice) Use virtual environment for installation test (install requirement also) :
 
