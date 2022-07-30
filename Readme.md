@@ -225,6 +225,7 @@ Also, you can build with docker for python3.5 by (read and follow instruction in
 Find wheel file in the image. This part is 99% based on https://github.com/edumucelli/build-pytorch.
 
 Download torchvision-0.2.0-py2.py3-none-any.whl in https://download.pytorch.org/whl/cu90/torch_stable.html, and install it with :
+
 	- python3.5 -m pip install torchvision-0.2.0-py2.py3-none-any.whl 
 	- python3.5 -m pip install torch-1.0.0a0+db5d313-cp35-cp35m-linux_x86_64.whl (after install torchvision necessary.. stupid, but dont change name of file !!)
  
