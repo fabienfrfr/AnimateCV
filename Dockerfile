@@ -1,102 +1,105 @@
-# Ubuntu with desktop and VNC server
-FROM consol/ubuntu-xfce-vnc
+FROM ubuntu:16.04
 
-# Switche default user to root
-USER 0
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates apt-transport-https gnupg-curl && \
+    rm -rf /var/lib/apt/lists/* && \
+    NVIDIA_GPGKEY_SUM=d1be581509378368edeec8c1eb2958702feedf3bc3d17011adbf24efacce4ab5 && \
+    NVIDIA_GPGKEY_FPR=ae09fe4bbd223a84b2ccfce3f60f4b3d7fa2af80 && \
+    apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/7fa2af80.pub && \
+    apt-key adv --export --no-emit-version -a $NVIDIA_GPGKEY_FPR | tail -n +5 > cudasign.pub && \
+    echo "$NVIDIA_GPGKEY_SUM  cudasign.pub" | sha256sum -c --strict - && rm cudasign.pub && \
+    echo "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64 /" > /etc/apt/sources.list.d/cuda.list && \
+    echo "deb https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1604/x86_64 /" > /etc/apt/sources.list.d/nvidia-ml.list
 
-# Use bash for the shell
-SHELL ["/bin/bash", "-c"]
+ENV CUDA_VERSION 9.1.85
 
-# Set the environment so that we can use conda after install
-ENV PATH='~/anaconda3/condabin:${PATH}'
+ENV CUDA_PKG_VERSION 9-1=$CUDA_VERSION-1
+RUN apt-get update && apt-get install -y --no-install-recommends --allow-unauthenticated \
+        cuda-cudart-$CUDA_PKG_VERSION && \
+    ln -s cuda-9.1 /usr/local/cuda && \
+    rm -rf /var/lib/apt/lists/*
 
-# Used for GPU setup
+# nvidia-docker 1.0
+LABEL com.nvidia.volumes.needed="nvidia_driver"
+LABEL com.nvidia.cuda.version="${CUDA_VERSION}"
+
+RUN echo "/usr/local/nvidia/lib" >> /etc/ld.so.conf.d/nvidia.conf && \
+    echo "/usr/local/nvidia/lib64" >> /etc/ld.so.conf.d/nvidia.conf
+
+ENV PATH /usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}
+ENV LD_LIBRARY_PATH /usr/local/nvidia/lib:/usr/local/nvidia/lib64
+
+# nvidia-container-runtime
 ENV NVIDIA_VISIBLE_DEVICES all
-ENV NVIDIA_DRIVER_CAPABILITIES compute, video, utility
+ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
+ENV NVIDIA_REQUIRE_CUDA "cuda>=9.1"
 
-# Needed to build some packages
-RUN apt-get update \
-&& apt-get upgrade -y \
-&& apt-get install gcc -y \
-&& apt-get install build-essential -y \
-&& apt-get install unzip -y \
-&& apt-get install nomacs -y \
-&& apt-get install git -y \
-&& apt-get install git -y \
-&& apt-get install nano -y \
-&& apt-get install wget -y \
-&& apt-get install gedit -y \
-&& apt-get install imagemagick -y \
-&& apt-get install cmake -y 
+# == tensorflow-gpu: tensorflow + cuda and cudnn build with bazel based on the official Dockerfile
+# cf until 1.12.3: https://github.com/tensorflow/tensorflow/blob/v1.12.3/tensorflow/tools/docker/Dockerfile.devel-gpu
+# or master https://github.com/tensorflow/tensorflow/blob/master/tensorflow/tools/dockerfiles/dockerfiles/devel-gpu.Dockerfile
+# The difference here is that no jupyter, keras, etc are needed, the goal here is tha bare minimum
+# in order to build the tensorflow-gpu with python3.5, cuda 9.1.85 and cudnn 7.1.3
 
-# Get Anaconda package & install
-RUN wget https:/repo.anaconda.com/archive/Anaconda3-2019.03-Linux-x86_64.sh \
-&& chmod 777 Anaconda3-2019.03-Linux-x86_64.sh \
-&& ./Anaconda3-2019.03-Linux-x86_64.sh -b \
-&& echo "export PATH=\"/headless/anaconda3/condabin:$PATH\"">>bashrc \
-&& source ~/.bashrc
+ENV CUDNN_PKG_VERSION 7.1.3.16-1+cuda9.1
 
-# Get CUDA & install
-RUN wget https://developer.nvidia.com/compute/cuda/10.1/Prod/local_installers/cuda_10.1.105_418.39_linux.run \
-&& chmod 777 cuda_10.1.105_418.39_linux.run
+RUN apt-get update && apt-get install -y --no-install-recommends --allow-unauthenticated \
+        build-essential \
+        cmake \
+        cuda-command-line-tools-9-1 \
+        cuda-cublas-dev-9-1 \
+        cuda-cudart-dev-9-1 \
+        cuda-cufft-dev-9-1 \
+        cuda-curand-dev-9-1 \
+        cuda-cusolver-dev-9-1 \
+        cuda-cusparse-dev-9-1 \
+        cuda-nvrtc-dev-9-1 \
+        curl \
+        git \
+        libcudnn7=$CUDNN_PKG_VERSION \
+        libcudnn7-dev=$CUDNN_PKG_VERSION \
+        libcurl3-dev \
+        libfreetype6-dev \
+        libhdf5-serial-dev \
+        libpng12-dev \
+        libzmq3-dev \
+        pkg-config \   
+        python3-dev \
+        python3-pip \
+        python3-numpy \
+        python3-setuptools \
+        python3-scipy \
+        python3-wheel \
+        rsync \
+        software-properties-common \
+        unzip \
+        zip \
+        zlib1g-dev \
+        wget \
+        && \
+    rm -rf /var/lib/apt/lists/* && \
+    find /usr/local/cuda-9.1/lib64/ -type f -name 'lib*_static.a' -not -name 'libcudart_static.a' -delete && \
+    rm /usr/lib/x86_64-linux-gnu/libcudnn_static_v7.a
 
-RUN ./cuda_10.1.105_418.39_linux.run --silent --toolkit
+RUN git clone -b 'v1.0.0' --single-branch --depth 1 https://github.com/pytorch/pytorch.git
 
-# Get CuDNN (put in current folder, download in https://developer.nvidia.com/rdp/cudnn-archive, need registration)
-COPY ./cudnn.tgz ./cuda_10
-RUN tar -xzvf cudnn.tgz \
-&& cp cuda/lib64/libcudnn*.h /usr/local/include \
-&& cp cuda/lib64/libcudnn* /usr/local/cuda/lib64 \
-&& chmod a+r /usr/local/cuda/include/cudnn*.h /usr/local/cuda/lib64/libcudnn*
+WORKDIR '/pytorch'
 
-# Init PyTorch 1.9 (CUDA 9 compatible)
-RUN git clone -b release/1.9 --recursive https://github.com/pytorch/pytorch \
-&& cd pytorch \
-&& git submodule sync \
-&& git submodule update --init --recursive
-
-# Get Torchvision (latest, otherwise is "0.10.0" for torch 1.9)
-RUN git clone https://github.com/pytorch/vision.git
-
-# Conda environment
-RUN conda init \
-&& conda create -n vid_sum python \
-&& conda install -n vid_sum numpy ninja pyyaml mkl-include setuptools cmake cffi typing_extensions future six requests dataclasses \
-&& conda install -n vid_sum h5py \
-&& conda install -n vid_sum tqdm \
-&& conda install -n vid_sum pandas \
-&& conda install -n vid_sum matplotlib \
-&& conda install -n vid_sum opencv \
-&& conda install -n vid_sum -c pytoch magma-cuda101
-
-RUN conda init bash \
-&& source ~/.bashrc \
-&& conda activate vid_sum \
-&& pip install ortools
-
-# Dev Pytorch
-RUN cd pytorch \
-&& conda init bash \
-&& source ~/.bashrc \
-&& conda activate vid_sum \
-&& python setup.py develop && python -c "import torch"
-
-# Sup
-RUN apt-get install software-properties-common -y \
-&& add-apt-repository ppa:ubuntu-toolchain-r/test -y \
-&& apt-get update -y \
-&& apt-get install libstdc++6 -y
-
-RUN apt-get install python3-setuptools -y
-
-# Dev Torchvision
-RUN cd ~/vision \
-&& conda init bash \
-&& source ~/.bashrc \
-&& conda activate vid_sum \
-&& python setup.py develop
-
-
-
-
-
+RUN git submodule update --init --recursive && \
+    pip3 install pyyaml==3.13 wheel && \
+    pip3 install -r requirements.txt
+  
+RUN CUDAHOSTCXX='/usr/bin/gcc' \
+    USE_OPENCV=1 \
+    BUILD_TORCH=ON \
+    CMAKE_PREFIX_PATH="/usr/bin/" \
+    LD_LIBRARY_PATH=/usr/local/cuda/lib64:/usr/local/lib:$LD_LIBRARY_PATH \
+    CUDA_BIN_PATH=/usr/local/cuda/bin \
+    CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda/ \
+    CUDNN_LIB_DIR=/usr/local/cuda/lib64 \
+    CUDA_HOST_COMPILER=cc \
+    USE_CUDA=1 \
+    USE_NNPACK=1 \
+    CC=cc \
+    CXX=c++ \
+    TORCH_CUDA_ARCH_LIST="3.0 6.0 6.1+PTX 7.0" \
+    TORCH_NVCC_FLAGS="-Xfatbin -compress-all" \
+    python3 setup.py bdist_wheel
