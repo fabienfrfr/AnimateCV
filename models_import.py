@@ -24,9 +24,14 @@ def caption_model(MODEL_DIR,MODEL_NAME):
 
 	## Neural network Initialization
 	print("[INFO] Starting System...")
+	"""
+	# If you don't use a builded torch
 	v,vv = torch.cuda.get_device_capability(0)
 	cc = 0 if float(torch.__version__[:3]) <= 0.3 else 3.5
 	device = torch.device('cuda:0' if (torch.cuda.is_available() & (v+0.1*vv > cc)) else 'cpu')
+	# Else :
+	"""
+	device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 	print("[INFO] Calculation type : " + device.type)
 	print('[INFO] Importing vocabulary..')
 	vocab_set = pickle.load(open(MODEL_DIR+'vocab_set.pkl', 'rb')) if os.path.exists(MODEL_DIR+'vocab_set.pkl') else None
@@ -43,7 +48,7 @@ def caption_model(MODEL_DIR,MODEL_NAME):
 	print('[INFO] Switch models to inference mode..')
 	model.eval()
 	print('[INFO] Torch model ready to use !')
-	return model, checkpoint, word2idx, idx2word
+	return model, checkpoint, word2idx, idx2word, device
 
 def process_caption(im, model, word2idx, idx2word):
 	print('[INFO] Define checkpoint of intermediate result layer (bootleneck)..')
@@ -64,7 +69,7 @@ def process_caption(im, model, word2idx, idx2word):
 
 if __name__ == '__main__':
 	## import model
-	model, checkpoint, word2idx, idx2word = caption_model(MODEL_DIR,MODEL_NAME)
+	model, checkpoint, word2idx, idx2word, device = caption_model(MODEL_DIR,MODEL_NAME)
 	args = parser.parse_args()
 	## exemple
 	print('[INFO] Importing image')
@@ -78,8 +83,8 @@ if __name__ == '__main__':
 	image = cv2.imread(image_path)
 	image = cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
 	## apply
-	im = torch.tensor(np.rollaxis(image, -1,0)/255., dtype=torch.float32)
-	encod_out, inter_out, capidx, alpha, caption_pred = process_caption(im, model, word2idx, idx2word)
+	im = torch.tensor(np.rollaxis(image, -1,0)/255., dtype=torch.float32).to(device)
+	encoder, decoder, caption_pred = process_caption(im, model, word2idx, idx2word)
 	print('[INFO] Results : ' + caption_pred)
 	plt.imshow(image); plt.show()
 	print('[INFO] Stopping System')
