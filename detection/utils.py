@@ -32,6 +32,12 @@ from torch import nn
 import torch.distributed as dist
 from PIL import ImageFilter, ImageOps
 
+"""
+"PEP 498: Formatted string literals" not included in Python 3.5, need to : 
+# my_message = f"I live in {state}" <=> my_message = "I live in {}".format(state)
+
+"""
+
 
 class GaussianBlur(object):
     """
@@ -72,7 +78,8 @@ def load_pretrained_weights(model, pretrained_weights, checkpoint_key, model_nam
     if os.path.isfile(pretrained_weights):
         state_dict = torch.load(pretrained_weights, map_location="cpu")
         if checkpoint_key is not None and checkpoint_key in state_dict:
-            print(f"Take key {checkpoint_key} in provided checkpoint dict")
+            #print(f"Take key {checkpoint_key} in provided checkpoint dict")
+            print("Take key {} in provided checkpoint dict".format(checkpoint_key))
             state_dict = state_dict[checkpoint_key]
         # remove `module.` prefix
         state_dict = {k.replace("module.", ""): v for k, v in state_dict.items()}
@@ -416,7 +423,7 @@ def get_sha():
         branch = _run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
     except Exception:
         pass
-    message = f"sha: {sha}, status: {diff}, branch: {branch}"
+    message ="sha: {}, status: {}, branch: {}".format((sha,diff,branch))
     return message
 
 

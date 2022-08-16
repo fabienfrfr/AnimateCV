@@ -23,6 +23,26 @@ import torch.nn as nn
 
 from utils import trunc_normal_
 
+##### ADDED FOR OLD PYTORCH (fabienfrfr 20220816, min v1.0.0)
+from torch import Tensor
+import torch.nn.functional as F
+
+# nn.GELU -> GELU
+class GELU(nn.Module):
+    def forward(self, input: Tensor) -> Tensor:
+        return F.gelu(input)
+
+# nn.Identity -> Identity
+from typing import Any
+class Identity(nn.Module):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super(Identity, self).__init__()
+
+    def forward(self, input: Tensor) -> Tensor:
+        return input
+
+##### END
+
 
 def drop_path(x, drop_prob: float = 0., training: bool = False):
 	if drop_prob == 0. or not training:
@@ -47,7 +67,7 @@ class DropPath(nn.Module):
 
 
 class Mlp(nn.Module):
-	def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.):
+	def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=GELU, drop=0.):
 		super().__init__()
 		out_features = out_features or in_features
 		hidden_features = hidden_features or in_features
@@ -94,12 +114,12 @@ class Attention(nn.Module):
 
 class Block(nn.Module):
 	def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, qk_scale=None, drop=0., attn_drop=0.,
-				 drop_path=0., act_layer=nn.GELU, norm_layer=nn.LayerNorm):
+				 drop_path=0., act_layer=GELU, norm_layer=nn.LayerNorm):
 		super().__init__()
 		self.norm1 = norm_layer(dim)
 		self.attn = Attention(
 			dim, num_heads=num_heads, qkv_bias=qkv_bias, qk_scale=qk_scale, attn_drop=attn_drop, proj_drop=drop)
-		self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
+		self.drop_path = DropPath(drop_path) if drop_path > 0. else Identity()
 		self.norm2 = norm_layer(dim)
 		mlp_hidden_dim = int(dim * mlp_ratio)
 		self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
@@ -157,7 +177,7 @@ class VisionTransformer(nn.Module):
 		self.norm = norm_layer(embed_dim)
 
 		# Classifier head
-		self.head = nn.Linear(embed_dim, num_classes) if num_classes > 0 else nn.Identity()
+		self.head = nn.Linear(embed_dim, num_classes) if num_classes > 0 else Identity()
 
 		trunc_normal_(self.pos_embed, std=.02)
 		trunc_normal_(self.cls_token, std=.02)
@@ -265,12 +285,12 @@ class DINOHead(nn.Module):
 			layers = [nn.Linear(in_dim, hidden_dim)]
 			if use_bn:
 				layers.append(nn.BatchNorm1d(hidden_dim))
-			layers.append(nn.GELU())
+			layers.append(GELU())
 			for _ in range(nlayers - 2):
 				layers.append(nn.Linear(hidden_dim, hidden_dim))
 				if use_bn:
 					layers.append(nn.BatchNorm1d(hidden_dim))
-				layers.append(nn.GELU())
+				layers.append(GELU())
 			layers.append(nn.Linear(hidden_dim, bottleneck_dim))
 			self.mlp = nn.Sequential(*layers)
 		self.apply(self._init_weights)
