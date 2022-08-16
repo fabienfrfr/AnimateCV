@@ -15,7 +15,11 @@ import vision_transformer as vits
 
 from utils_math import CenterCropping
 
-import hub # old pytorch
+# for my own pytorch build (v1.0.0 with cuda 3.0)
+if v == 3 and vv == 5 :
+	import hub # old pytorch
+else :
+	import torch.hub as hub
 
 ## Input
 parser = argparse.ArgumentParser(description='Animate an image understanding by a neural network - App')
