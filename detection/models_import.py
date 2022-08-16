@@ -15,6 +15,8 @@ import vision_transformer as vits
 
 from utils_math import CenterCropping
 
+import hub # old pytorch
+
 ## Input
 parser = argparse.ArgumentParser(description='Animate an image understanding by a neural network - App')
 parser.add_argument('-i', '--input', type=str, required=False, help="Path of the image to load.")
@@ -42,7 +44,7 @@ def ViT_dino_model(info=True):
 	model.eval(); model.to(device)
 	logging.info('Importing pretrained dino model..')
 	url = "dino_deitsmall8_300ep_pretrain/dino_deitsmall8_300ep_pretrain.pth" # model used for visualizations in dino paper
-	state_dict = torch.hub.load_state_dict_from_url(url="https://dl.fbaipublicfiles.com/dino/" + url)
+	state_dict = hub.load_state_dict_from_url(url="https://dl.fbaipublicfiles.com/dino/" + url)
 	model.load_state_dict(state_dict, strict=True)
 	logging.info('Torch model ready to use !')
 	return model, device
