@@ -30,7 +30,8 @@ import torch.nn.functional as F
 # nn.GELU -> GELU
 class GELU(nn.Module):
     def forward(self, input: Tensor) -> Tensor:
-        return F.gelu(input)
+        #return F.gelu(input)
+        return input * 0.5 * (1.0 + torch.erf(input / math.sqrt(2.0)))
 
 # nn.Identity -> Identity
 from typing import Any
@@ -208,7 +209,8 @@ class VisionTransformer(nn.Module):
 		patch_pos_embed = nn.functional.interpolate(
 			patch_pos_embed.reshape(1, int(math.sqrt(N)), int(math.sqrt(N)), dim).permute(0, 3, 1, 2),
 			scale_factor=(w0 / math.sqrt(N), h0 / math.sqrt(N)),
-			mode='bicubic',
+			#mode='bicubic', # doesn't exist in 1.0.0
+			mode='bilinear',
 		)
 		assert int(w0) == patch_pos_embed.shape[-2] and int(h0) == patch_pos_embed.shape[-1]
 		patch_pos_embed = patch_pos_embed.permute(0, 2, 3, 1).view(1, -1, dim)
@@ -310,3 +312,24 @@ class DINOHead(nn.Module):
 		x = nn.functional.normalize(x, dim=-1, p=2)
 		x = self.last_layer(x)
 		return x
+
+### basic exemple
+if __name__ == '__main__' :
+	import numpy as np
+	import os, cv2
+
+	INPUT_DIR = 'input/'
+	image_path = INPUT_DIR + np.random.choice(os.listdir(INPUT_DIR))
+
+	model = VisionTransformer()
+	model.eval()
+
+	image = cv2.imread(image_path)
+	blob = cv2.dnn.blobFromImage(image, 1/255, (480,480), (0,0,0), swapRB=True, crop=False)
+	img = torch.tensor(blob)
+
+	out = []
+	model.patch_embed._modules['proj'].register_forward_hook(lambda m, input, output: out.append((output)))
+	model.blocks[0]._modules['attn'].register_forward_hook(lambda m, input, output: out.append((output)))
+
+	output = model.get_last_selfattention(img)
