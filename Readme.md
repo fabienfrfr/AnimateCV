@@ -2,6 +2,12 @@
 
 See the notebook [here](/notebook_computer-vision_ann.ipynb) (Work in progress)
 
+Add : 
+	- Les couches résiduelles sont l'une des solutions au probleme de l'effacement du gradient
+ 	- Les "têtes d'attentions" sont à la corrélation douce, ce que les couches convolutionnel sont à la convolution.
+  	- Le critère de Markov
+
+
 Image Captionning with Transformer - This model is based on this [paper](https://arxiv.org/abs/1502.03044).
 
 ###### Attribution required : Fabien Furfaro (CC 4.0 BY NC ND SA)
